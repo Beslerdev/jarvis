@@ -35,6 +35,10 @@ class Estado:
         self.avisar("VOZ NO AUTORIZADA", 1.5)
 
 
+# Elementos opcionales de la pantalla
+MOSTRAR_SUBTITULOS = False   # texto de lo que se habla, abajo
+MOSTRAR_ONDA = False         # barras de sonido mientras habla
+
 COLORES = {
     "iniciando": (0, 120, 200),
     "espera": (0, 150, 230),
@@ -225,7 +229,7 @@ def ejecutar(estado, titulo="J.A.R.V.I.S."):
         rot += dt * (2.5 if modo == "pensando" else 0.6)
 
         w, h = pantalla.get_size()
-        cx, cy = w // 2, int(h * 0.43)
+        cx, cy = w // 2, int(h * (0.43 if (MOSTRAR_SUBTITULOS or MOSTRAR_ONDA) else 0.5))
         R = int(min(w, h * 0.82) * 0.27)
         pantalla.fill((2, 6, 12))
 
@@ -289,7 +293,7 @@ def ejecutar(estado, titulo="J.A.R.V.I.S."):
         ancho_barra = 6
         base_y = int(cy + R * 1.68)
         inicio_x = cx - len(historial) * ancho_barra // 2
-        for i, v in enumerate(historial):
+        for i, v in enumerate(historial if MOSTRAR_ONDA else []):
             alto = 2 + int(v * 38)
             x = inicio_x + i * ancho_barra
             pygame.draw.rect(pantalla, escalar(color_actual, 0.35 + v), (x, base_y - alto, ancho_barra - 2, alto * 2))
@@ -306,12 +310,12 @@ def ejecutar(estado, titulo="J.A.R.V.I.S."):
             pantalla.blit(av, (cx - av.get_width() // 2, int(cy - R * 1.62) - 20))
 
         y = base_y + 50
-        if estado.usuario:
+        if MOSTRAR_SUBTITULOS and estado.usuario:
             for linea in envolver("> " + estado.usuario, f_chica, w - 160):
                 s = f_chica.render(linea, True, (150, 170, 185))
                 pantalla.blit(s, (cx - s.get_width() // 2, y))
                 y += 20
-        if estado.jarvis:
+        if MOSTRAR_SUBTITULOS and estado.jarvis:
             for linea in envolver(estado.jarvis, f_media, w - 160):
                 s = f_media.render(linea, True, mezclar(color_actual, (255, 255, 255), 0.4))
                 pantalla.blit(s, (cx - s.get_width() // 2, y))
