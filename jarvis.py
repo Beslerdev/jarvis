@@ -437,6 +437,8 @@ HERRAMIENTAS += [
          "valor": {"type": "string"}}, "required": ["ajuste", "valor"]}},
     {"name": "ver_ajustes", "description": "Muestra los ajustes actuales de Jarvis (voz, tono, velocidad, etc.).",
      "input_schema": {"type": "object", "properties": {}}},
+    {"name": "inicio_automatico", "description": "Activa o desactiva que Jarvis arranque solo al prender la PC (y se reinicie solo si se cierra por un error).",
+     "input_schema": {"type": "object", "properties": {"activar": {"type": "boolean"}}, "required": ["activar"]}},
     {"name": "actualizar", "description": "Busca e instala la ultima version de Jarvis desde internet. Si hay version nueva, Jarvis se reinicia al terminar de hablar.",
      "input_schema": {"type": "object", "properties": {}}},
 ]
@@ -464,6 +466,35 @@ def cambiar_ajuste(ajuste, valor):
     return f"Listo: {ajuste} = {AJUSTES[ajuste]}. Se aplica desde la proxima frase."
 
 
+def inicio_automatico(activar):
+    carpeta_inicio = os.path.join(os.environ.get("APPDATA", ""), "Microsoft", "Windows",
+                                  "Start Menu", "Programs", "Startup")
+    ruta_vbs = os.path.join(carpeta_inicio, "Jarvis.vbs")
+    if str(activar).lower() in ("false", "no", "0", "desactivar"):
+        if os.path.exists(ruta_vbs):
+            os.remove(ruta_vbs)
+        return "Listo: ya no arranco solo con Windows."
+    bat = os.path.join(CARPETA, "jarvis_siempre.bat")
+    if not os.path.exists(bat):
+        return "Falta jarvis_siempre.bat: decile al usuario que reinicie Jarvis para que se descargue y lo vuelva a pedir."
+    os.makedirs(carpeta_inicio, exist_ok=True)
+    with open(ruta_vbs, "w", encoding="utf-8") as f:
+        f.write('Set s = CreateObject("WScript.Shell")\r\n')
+        f.write(f's.CurrentDirectory = "{CARPETA}"\r\n')
+        f.write(f's.Run """{bat}""", 7, False\r\n')
+    return "Listo: desde ahora arranco solo cada vez que se prende la PC, y si me cierro por un error me reinicio."
+
+
+def mantener_despierta():
+    """Evita que Windows suspenda la PC mientras Jarvis esta abierto (la pantalla si se puede apagar)."""
+    try:
+        import ctypes
+        ctypes.windll.kernel32.SetThreadExecutionState(0x80000000 | 0x00000001)
+        print("Modo siempre activo: la PC no se va a suspender mientras JARVIS este abierto.")
+    except Exception:
+        pass
+
+
 def actualizar_jarvis():
     import actualizar
     if actualizar.actualizar():
@@ -482,7 +513,7 @@ def ejecutar_herramienta(nombre, datos, voz):
             "volumen": volumen, "multimedia": multimedia, "escribir_texto": escribir_texto,
             "captura_pantalla": captura_pantalla, "bloquear_pc": bloquear_pc, "energia": energia,
             "cambiar_ajuste": cambiar_ajuste, "ver_ajustes": lambda: json.dumps(AJUSTES, ensure_ascii=False),
-            "actualizar": actualizar_jarvis,
+            "actualizar": actualizar_jarvis, "inicio_automatico": inicio_automatico,
         }
         return funciones[nombre](**datos)
     except Exception as e:
@@ -565,6 +596,7 @@ class Cerebro:
             "- Podés cambiar tu propia voz, tono, velocidad o efecto robótico con cambiar_ajuste cuando te lo pidan. "
             "Si piden 'otra voz' sin decir cuál, ofrecé un par de opciones.\n"
             "- Si te dicen 'actualizate' o 'buscá actualizaciones', usá la herramienta actualizar.\n"
+            "- Si te piden que arranques solo con Windows o que estés siempre prendido, usá inicio_automatico.\n"
             "- Si algo no se entendió (el reconocimiento de voz a veces falla), pedí que lo repita.\n\n"
             f"LO QUE SABÉS DE {NOMBRE_USUARIO.upper()}:\n{memoria}\n\n"
             f"Fecha y hora actual: {dias[ahora.weekday()]} {ahora.strftime('%d/%m/%Y %H:%M')}."
@@ -758,6 +790,8 @@ def ciclo_asistente(estado, voz, cerebro, modo_texto):
 def main():
     modo_texto = "--texto" in sys.argv
     con_interfaz = "--sin-interfaz" not in sys.argv
+    if "--siempre" in sys.argv:
+        mantener_despierta()
     print("=" * 50)
     print("   J.A.R.V.I.S.  -  iniciando sistemas")
     print("=" * 50)
@@ -778,7 +812,7 @@ def main():
         except Exception as e:
             print(f"(No pude abrir la interfaz visual: {e}.)")
             print("Proba con: python jarvis.py --sin-interfaz")
-            return
+            sys.exit(1)
     ciclo_asistente(estado, voz, cerebro, modo_texto)
     if _reiniciar.is_set():
         sys.exit(3)

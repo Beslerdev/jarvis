@@ -20,7 +20,7 @@ REPO = "Beslerdev/jarvis"
 RAMA = "main"
 CARPETA = os.path.dirname(os.path.abspath(__file__))
 RUTA_VERSION = os.path.join(CARPETA, ".version")
-NO_TOCAR = {"iniciar_jarvis.bat"}  # se esta ejecutando mientras actualizamos
+NO_TOCAR = {"iniciar_jarvis.bat", "jarvis_siempre.bat"}  # se ejecutan mientras actualizamos: solo se bajan si faltan
 
 
 def _bajar(url, accept=None, intentos=4):
@@ -66,9 +66,11 @@ def actualizar():
         cambiados = []
         for item in arbol.get("tree", []):
             ruta = item["path"]
-            if item["type"] != "blob" or ruta in NO_TOCAR or ruta.startswith("."):
+            if item["type"] != "blob" or ruta.startswith("."):
                 continue
             destino = os.path.join(CARPETA, *ruta.split("/"))
+            if ruta in NO_TOCAR and os.path.exists(destino):
+                continue
             datos = _bajar(f"https://raw.githubusercontent.com/{REPO}/{sha}/{ruta}")
             if _leer(destino) == datos:
                 continue

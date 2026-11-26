@@ -41,3 +41,8 @@ CAMBIAR AJUSTES HABLANDO
 - "Cambia tu voz a Tomas" / "habla mas grave" / "habla mas rapido" / "saca el efecto robotico"
 - Voces: alvaro, tomas, jorge, gonzalo, alonso, elena, elvira, dalia
 - Se guardan en ajustes.json.
+
+SIEMPRE ACTIVO
+- Decile: "Jarvis, arranca solo cuando prenda la PC". Desde ahi se abre solo con Windows,
+  se reinicia solo si se cierra por un error, y no deja que la PC se suspenda mientras esta abierto.
+- Para desactivarlo: "Jarvis, ya no arranques con Windows".
