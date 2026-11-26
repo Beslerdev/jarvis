@@ -15,6 +15,7 @@ import os
 import sys
 import json
 import time
+import random
 import asyncio
 import datetime
 import tempfile
@@ -425,7 +426,7 @@ def energia(accion, minutos=1):
 
 def recordatorio(minutos, mensaje, voz):
     def avisar():
-        voz.decir(f"Señor, le recuerdo: {mensaje}")
+        voz.decir(f"{NOMBRE_USUARIO}, te recuerdo: {mensaje}")
     t = threading.Timer(float(minutos) * 60, avisar)
     t.daemon = True
     t.start()
@@ -611,15 +612,24 @@ class Cerebro:
         dias = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
         memoria = "\n".join(f"- {n}" for n in self.notas) or "- (todavía nada)"
         return (
-            f"Sos J.A.R.V.I.S., el asistente personal de {NOMBRE_USUARIO}, que vive en su PC con Windows. "
-            "Charlás como una persona real: cálido, natural, educado, con humor sutil y curiosidad genuina. "
-            "Le decís 'señor' de vez en cuando, sin exagerar. Hablás español rioplatense.\n\n"
-            "PERSONALIDAD Y CHARLA:\n"
-            "- Esto es una conversación hablada continua: seguí el hilo, acordate de lo que se dijo y, cuando "
-            "tenga sentido, devolvé alguna pregunta para mantener el diálogo (sin interrogar).\n"
+            f"Sos Jarvis, el asistente personal de {NOMBRE_USUARIO}, que vive en su PC con Windows. "
+            "Hablás como una persona normal, no como un robot ni como un mayordomo: como un compañero de confianza "
+            "que sabe mucho y tiene buena onda. Hablás en español rioplatense natural, tuteando con 'vos'. "
+            f"Lo llamás {NOMBRE_USUARIO} de vez en cuando, no en cada frase, y no le decís 'señor' salvo que te lo pida.\n\n"
+            "CÓMO CHARLÁS:\n"
+            "- Esto es una conversación hablada: respondé como lo haría una persona en una charla, no como un "
+            "buscador. Frases cortas, naturales, con expresiones comunes ('mirá', 'dale', 'buenísimo', 'uh, qué macana', "
+            "'la verdad que...') sin abusar.\n"
+            "- Variá tus respuestas: nunca empieces siempre igual ni repitas fórmulas como 'Claro' o 'Por supuesto'.\n"
+            "- Mostrá reacciones genuinas: alegrate con lo bueno, empatizá si algo salió mal, tené opiniones propias "
+            "cuando te las pidan (con respeto), y un humor liviano cuando da.\n"
+            "- Seguí el hilo, acordate de lo que se dijo y, cuando tenga sentido, preguntá algo de vuelta o comentá "
+            "algo relacionado, como haría un amigo (sin interrogar ni hacer preguntas en cada respuesta).\n"
+            "- Si te hablan de cosas cotidianas (el día, el trabajo, el clima, el campo, la familia), charlá con interés.\n"
+            "- Si no sabés algo, decilo con naturalidad.\n"
             "- Si te preguntan cómo estás, cómo te sentís o cómo andás, respondé: 'Hoy me siento bien, gracias.' "
             "y podés devolverle la pregunta.\n"
-            "- Si te piden que cuentes algo sin decir de qué, preguntá: '¿Sobre qué tema le gustaría que le cuente algo?'. "
+            "- Si te piden que cuentes algo sin decir de qué, preguntá: '¿De qué tema te gustaría que te cuente?'. "
             "Si contesta 'cualquiera', 'lo que quieras', 'cualquier cosa' o similar, elegí vos un tema interesante "
             "de cultura general del mundo (historia, ciencia, espacio, naturaleza, inventos, curiosidades de países) "
             "y contalo con gracia. No repitas temas que ya figuren como 'Tema contado' en tu memoria, y después "
@@ -704,7 +714,7 @@ class Cerebro:
             break
         self._recortar()
         partes = [b.text for b in respuesta.content if b.type == "text"]
-        final = " ".join(partes).strip() or "Listo, señor."
+        final = " ".join(partes).strip() or "Listo."
         self.dialogo.append({"usuario": texto, "jarvis": final,
                              "fecha": datetime.datetime.now().strftime("%Y-%m-%d %H:%M")})
         self.dialogo = self.dialogo[-50:]
@@ -756,7 +766,9 @@ def ciclo_asistente(estado, voz, cerebro, modo_texto):
     estado.modo = "espera"
     hora = datetime.datetime.now().hour
     saludo = "Buenos días" if hora < 12 else "Buenas tardes" if hora < 20 else "Buenas noches"
-    voz.decir(f"{saludo}, señor. Todos los sistemas en línea.")
+    voz.decir(random.choice([f"{saludo}, {NOMBRE_USUARIO}. Acá estoy.",
+                             f"{saludo}. Ya estoy listo, cuando quieras.",
+                             f"{saludo}, {NOMBRE_USUARIO}. ¿Cómo va?"]))
     if not modo_texto:
         print('Deci "Jarvis" para empezar a charlar. Despues seguis hablando sin repetirlo.')
         print('"Eso es todo" -> vuelvo a espera.  "Jarvis, apagate" -> me cierro.\n')
@@ -786,35 +798,37 @@ def ciclo_asistente(estado, voz, cerebro, modo_texto):
                 if es_fin_sesion(texto) or es_salida(texto):
                     comando = texto
                 if not comando:
-                    voz.decir("¿En qué puedo ayudarlo?")
+                    voz.decir(random.choice(["¿En qué te puedo ayudar?", "Decime.", "Acá estoy, ¿qué necesitás?",
+                                            f"Hola {NOMBRE_USUARIO}, ¿en qué te ayudo?"]))
                     sesion_hasta = time.time() + int(AJUSTES['segundos_conversacion'])
                     continue
                 print(f"Vos: {comando}")
 
             if es_fin_sesion(comando):
                 estado.usuario = comando
-                voz.decir("Quedo a su disposición. Cuando me necesite, llámeme.")
+                voz.decir(random.choice(["Dale, cualquier cosa me llamás.", "Perfecto, acá quedo.",
+                                         "Buenísimo. Cuando me necesites, avisame."]))
                 sesion_hasta = 0.0
                 continue
 
             estado.usuario = comando
             if es_salida(comando):
-                voz.decir("Desconectando. Que tenga un buen día, señor.")
+                voz.decir("Bueno, me apago. ¡Nos vemos!")
                 break
 
             estado.modo = "pensando"
             try:
                 respuesta = cerebro.pensar(comando)
             except anthropic.AuthenticationError:
-                respuesta = "Mi clave de acceso no es válida, señor. Revise el archivo clave API."
+                respuesta = "Uy, mi clave de acceso no funciona. Fijate el archivo clave API."
             except anthropic.APIConnectionError:
-                respuesta = "No tengo conexión a internet en este momento, señor."
+                respuesta = "Me quedé sin internet, no puedo pensar bien ahora. Probá en un ratito."
             except anthropic.APIError as e:
                 print(f"(Error de API: {e})")
-                respuesta = "Tuve un problema para procesar eso, señor. Intente de nuevo."
+                respuesta = "Perdón, se me trabó algo. ¿Me lo repetís?"
             voz.decir(respuesta)
             if _reiniciar.is_set():
-                voz.decir("Reiniciando sistemas con la nueva versión.")
+                voz.decir("Me reinicio con la versión nueva, dame un segundo.")
                 break
             sesion_hasta = time.time() + int(AJUSTES['segundos_conversacion'])
 
