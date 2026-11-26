@@ -43,8 +43,8 @@ VOCES = {
 }
 AJUSTES_DEFECTO = {
     "voz": "alvaro",            # una de VOCES
-    "tono": -14,               # Hz: negativo = mas grave
-    "velocidad": -4,           # %: negativo = mas lento
+    "tono": -10,               # Hz: negativo = mas grave
+    "velocidad": -8,           # %: negativo = mas lento (sereno, pausado)
     "efecto_robotico": True,   # timbre metalico de inteligencia artificial
     "segundos_conversacion": 45,
 }
@@ -194,12 +194,12 @@ class Voz:
 
 
 def efecto_robotico(pg, sonido, frecuencia):
-    """Le da a la voz un timbre metalico/sintetico (filtro peine con ecos muy cortos)."""
+    """Le da a la voz un leve timbre de sistema (filtro peine sutil con ecos muy cortos)."""
     import numpy as np
     original = pg.sndarray.array(sonido)
     f = original.astype(np.float32)
-    salida = f * 0.70
-    for ms, k in ((11, 0.38), (23, 0.20), (37, 0.10)):
+    salida = f * 0.82
+    for ms, k in ((9, 0.22), (19, 0.10), (31, 0.05)):
         d = int(frecuencia * ms / 1000)
         eco = np.zeros_like(f)
         eco[d:] = f[:-d]
