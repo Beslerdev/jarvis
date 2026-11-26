@@ -72,8 +72,9 @@ MAX_HISTORIAL = 30
 NOMBRE_USUARIO = "Dario"
 
 # Como suele transcribir Google la palabra "Jarvis"
-PALABRAS_ACTIVACION = ["jarvis", "yarvis", "harvis", "jarbis", "yarbis", "javis",
-                       "jervis", "charvis", "jarvi", "yarvi"]
+PALABRAS_ACTIVACION = ["jarvis", "yarvis", "harvis", "jarbis", "yarbis", "javis", "jervis",
+                       "charvis", "jarvi", "yarvi", "yarbi", "jarbi", "llarvis", "garvis", "jarbys",
+                       "jarvys", "charbis", "chavis", "yavis", "jervis", "service"]
 PALABRAS_SALIDA = ["apagate", "apágate", "desconectate", "desconéctate",
                    "chau jarvis", "adiós jarvis", "adios jarvis", "salir"]
 
@@ -218,9 +219,19 @@ class Oido:
         self.r.dynamic_energy_threshold = True
         self.r.pause_threshold = 0.8
         self.mic = sr.Microphone()
+        try:
+            import pyaudio
+            pa = pyaudio.PyAudio()
+            print(f"Microfono: {pa.get_default_input_device_info().get('name')}")
+            pa.terminate()
+        except Exception:
+            pass
         print("Calibrando microfono, silencio un segundo...")
         with self.mic as fuente:
             self.r.adjust_for_ambient_noise(fuente, duration=1.2)
+        # Evitar que la calibracion deje el microfono "sordo" (umbral muy alto) o demasiado sensible
+        self.r.energy_threshold = max(250, min(self.r.energy_threshold, 2500))
+        print(f"Sensibilidad del microfono: {int(self.r.energy_threshold)}")
 
     def escuchar(self, espera=None, limite=15):
         """Devuelve (texto, audio). texto = '' si no entendio nada."""
@@ -230,8 +241,11 @@ class Oido:
             except self.sr.WaitTimeoutError:
                 return "", None
         try:
-            return self.r.recognize_google(audio, language=IDIOMA), audio
+            texto = self.r.recognize_google(audio, language=IDIOMA)
+            print(f"  (escuche: \"{texto}\")")
+            return texto, audio
         except self.sr.UnknownValueError:
+            print("  (escuche un sonido pero no entendi palabras)")
             return "", audio
         except self.sr.RequestError as e:
             print(f"(Sin conexion al reconocimiento de voz: {e})")
@@ -239,13 +253,23 @@ class Oido:
             return "", None
 
 
+def _normalizar(palabra):
+    import unicodedata
+    p = unicodedata.normalize("NFD", palabra.lower())
+    return "".join(c for c in p if c.isalpha() and unicodedata.category(c) != "Mn")
+
+
 def separar_activacion(texto):
-    """Si el texto contiene 'Jarvis', devuelve (True, lo_que_sigue)."""
-    bajo = texto.lower()
-    for palabra in PALABRAS_ACTIVACION:
-        pos = bajo.find(palabra)
-        if pos != -1:
-            resto = texto[pos + len(palabra):].strip(" ,.:;!?¿¡")
+    """Si el texto contiene 'Jarvis' (o algo que suene parecido), devuelve (True, lo_que_sigue)."""
+    import difflib
+    palabras = texto.split()
+    for i, original in enumerate(palabras):
+        p = _normalizar(original)
+        if not p:
+            continue
+        parecido = difflib.SequenceMatcher(None, p, "jarvis").ratio()
+        if p in PALABRAS_ACTIVACION or (len(p) >= 4 and parecido >= 0.72):
+            resto = " ".join(palabras[i + 1:]).strip(" ,.:;!?¿¡")
             return True, resto
     return False, ""
 
