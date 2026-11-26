@@ -1,0 +1,12 @@
+anthropic
+SpeechRecognition
+PyAudio
+edge-tts
+pygame
+pyttsx3
+pyautogui
+pyperclip
+numpy
+torch
+librosa
+webrtcvad-wheels

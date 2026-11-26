@@ -1,0 +1,11 @@
+# Datos personales: quedan solo en tu PC
+clave_api.txt
+mi_voz.npy
+mi_voz.json
+memoria_jarvis.json
+dialogo_jarvis.json
+ajustes.json
+py_ruta.txt
+.version
+__pycache__/
+*.nuevo

@@ -1,0 +1,43 @@
+J.A.R.V.I.S. - Asistente de voz para Windows
+============================================
+
+INSTALACION (una sola vez)
+1. (Opcional) instalar.bat instala Python solo si no lo tenes.
+2. Consegui una clave de API en https://console.anthropic.com  (API Keys -> Create Key).
+   Hay que cargar saldo; cada pedido a Jarvis cuesta una fraccion de centavo.
+3. Doble clic en instalar.bat y pega la clave cuando la pida.
+
+USO
+- Deci "Jarvis" -> te pregunta en que puede ayudarte. Despues charlas normal, sin repetir "Jarvis".
+- "Eso es todo" o 45 segundos de silencio -> vuelve a quedar en espera.
+- Aprende de vos: guarda tus gustos en memoria_jarvis.json (podes leerlo o editarlo).
+- Doble clic en iniciar_jarvis.bat
+- Deci: "Jarvis, abri Excel"  /  "Jarvis, subi el volumen"  /  "Jarvis, como va a estar el clima manana?"
+- Despues de que responde, tenes unos segundos para seguir hablando sin repetir "Jarvis".
+- Para cerrarlo: "Jarvis, apagate"
+- Para que solo te responda a vos: registrar_mi_voz.bat (una vez).
+- Para elegir la voz: probar_voces.bat
+- Interfaz animada: F11 pantalla completa, ESC cerrar.
+- Sin microfono: modo_texto.bat
+
+QUE PUEDE HACER
+Abrir y cerrar programas, abrir carpetas, buscar en Google/YouTube/Maps, abrir paginas,
+volumen, pausar/pasar canciones, escribir texto donde este el cursor, capturas de pantalla,
+bloquear/apagar/reiniciar la PC (pide confirmacion), recordatorios y responder preguntas
+(clima, noticias, cuentas, lo que sea).
+
+AJUSTES (dentro de jarvis.py, arriba de todo)
+- Voz por defecto: Alvaro, grave y con efecto robotico. Se cambia hablando (ver abajo).
+- MODELO: claude-haiku-5-5 (rapido y barato). Para mas inteligencia: claude-sonnet-5-5.
+- APPS: agrega tus propios programas al diccionario APPS.
+
+ACTUALIZACIONES AUTOMATICAS
+- Jarvis vive en https://github.com/Beslerdev/jarvis
+- Cada vez que abris iniciar_jarvis.bat busca la ultima version y se actualiza solo.
+- Tambien podes decirle: "Jarvis, actualizate".
+- Tus datos (clave, voz registrada, memoria, ajustes) quedan solo en tu PC.
+
+CAMBIAR AJUSTES HABLANDO
+- "Cambia tu voz a Tomas" / "habla mas grave" / "habla mas rapido" / "saca el efecto robotico"
+- Voces: alvaro, tomas, jorge, gonzalo, alonso, elena, elvira, dalia
+- Se guardan en ajustes.json.
