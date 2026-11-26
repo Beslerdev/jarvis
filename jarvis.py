@@ -41,11 +41,13 @@ VOCES = {
     "gonzalo": "es-CO-GonzaloNeural", "alonso": "es-US-AlonsoNeural",
     "elena": "es-AR-ElenaNeural", "elvira": "es-ES-ElviraNeural", "dalia": "es-MX-DaliaNeural",
 }
+PERFIL_VOZ = 2  # al subir este numero, se aplican los nuevos valores de voz por defecto
 AJUSTES_DEFECTO = {
-    "voz": "alvaro",            # una de VOCES
-    "tono": -10,               # Hz: negativo = mas grave
-    "velocidad": -8,           # %: negativo = mas lento (sereno, pausado)
+    "voz": "jorge",             # una de VOCES (latina neutra)
+    "tono": -8,                # Hz: negativo = mas grave
+    "velocidad": -6,           # %: negativo = mas lento (sereno, pausado)
     "efecto_robotico": True,   # timbre metalico de inteligencia artificial
+    "intensidad_efecto": 75,   # 0 a 100
     "segundos_conversacion": 45,
 }
 
@@ -54,9 +56,15 @@ def cargar_ajustes():
     datos = dict(AJUSTES_DEFECTO)
     try:
         with open(RUTA_AJUSTES, encoding="utf-8") as f:
-            datos.update(json.load(f))
+            guardados = json.load(f)
+        if guardados.get("perfil_voz", 1) < PERFIL_VOZ:
+            # voz nueva por defecto: se descartan los ajustes de voz viejos
+            for clave in ("voz", "tono", "velocidad", "efecto_robotico", "intensidad_efecto"):
+                guardados.pop(clave, None)
+        datos.update(guardados)
     except Exception:
         pass
+    datos["perfil_voz"] = PERFIL_VOZ
     return datos
 
 
@@ -195,16 +203,24 @@ class Voz:
 
 
 def efecto_robotico(pg, sonido, frecuencia):
-    """Le da a la voz un leve timbre de sistema (filtro peine sutil con ecos muy cortos)."""
+    """Timbre metalico de inteligencia artificial: resonancia metalica + leve modulacion robotica."""
     import numpy as np
+    k = max(0.0, min(1.0, float(AJUSTES.get("intensidad_efecto", 75)) / 100.0))
     original = pg.sndarray.array(sonido)
     f = original.astype(np.float32)
-    salida = f * 0.82
-    for ms, k in ((9, 0.22), (19, 0.10), (31, 0.05)):
+    salida = f.copy()
+    # ecos muy cortos = resonancia metalica (como hablar dentro de un tubo)
+    for ms, g in ((4, 0.55), (8, 0.38), (12, 0.22), (17, 0.12)):
         d = int(frecuencia * ms / 1000)
         eco = np.zeros_like(f)
         eco[d:] = f[:-d]
-        salida += eco * k
+        salida += eco * g * k
+    # modulacion en anillo suave = zumbido robotico
+    t = np.arange(len(f)) / frecuencia
+    portadora = (1 - 0.35 * k) + 0.35 * k * np.sin(2 * np.pi * 62 * t)
+    if salida.ndim > 1:
+        portadora = portadora[:, None]
+    salida *= portadora
     pico = np.abs(salida).max() or 1.0
     salida = salida * min(1.0, 30000.0 / pico)
     return pg.sndarray.make_sound(np.ascontiguousarray(salida.astype(original.dtype)))
@@ -453,11 +469,11 @@ HERRAMIENTAS = [
 ]
 HERRAMIENTAS += [
     {"name": "cambiar_ajuste", "description": (
-        "Cambia un ajuste de Jarvis y lo guarda. ajuste: 'voz' (valor: " + ", ".join(VOCES) +
+        "Cambia un ajuste de Jarvis y lo guarda (si piden voz mas o menos metalica, ajusta intensidad_efecto). ajuste: 'voz' (valor: " + ", ".join(VOCES) +
         "), 'tono' (Hz, entero: negativo = mas grave, ej. -14), 'velocidad' (%, entero, ej. -5 o 10), "
-        "'efecto_robotico' (si/no), 'segundos_conversacion' (cuanto silencio espera antes de volver a modo espera)."),
+        "'efecto_robotico' (si/no), 'intensidad_efecto' (0 a 100: cuan metalica suena), 'segundos_conversacion' (cuanto silencio espera antes de volver a modo espera)."),
      "input_schema": {"type": "object", "properties": {
-         "ajuste": {"type": "string", "enum": ["voz", "tono", "velocidad", "efecto_robotico", "segundos_conversacion"]},
+         "ajuste": {"type": "string", "enum": ["voz", "tono", "velocidad", "efecto_robotico", "intensidad_efecto", "segundos_conversacion"]},
          "valor": {"type": "string"}}, "required": ["ajuste", "valor"]}},
     {"name": "ver_ajustes", "description": "Muestra los ajustes actuales de Jarvis (voz, tono, velocidad, etc.).",
      "input_schema": {"type": "object", "properties": {}}},
@@ -483,7 +499,8 @@ def cambiar_ajuste(ajuste, valor):
             numero = int(float(v.replace("hz", "").replace("%", "").replace("+", "")))
         except ValueError:
             return f"El valor '{valor}' no es un numero."
-        limites = {"tono": (-40, 40), "velocidad": (-50, 50), "segundos_conversacion": (10, 600)}
+        limites = {"tono": (-40, 40), "velocidad": (-50, 50), "segundos_conversacion": (10, 600),
+                   "intensidad_efecto": (0, 100)}
         lo, hi = limites[ajuste]
         AJUSTES[ajuste] = max(lo, min(hi, numero))
     guardar_ajustes()

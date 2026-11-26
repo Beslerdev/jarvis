@@ -27,7 +27,7 @@ bloquear/apagar/reiniciar la PC (pide confirmacion), recordatorios y responder p
 (clima, noticias, cuentas, lo que sea).
 
 AJUSTES (dentro de jarvis.py, arriba de todo)
-- Voz por defecto: Alvaro, grave y con efecto robotico. Se cambia hablando (ver abajo).
+- Voz por defecto: Jorge (latina neutra), grave y metalica. Se cambia hablando (ver abajo).
 - MODELO: claude-haiku-5-5 (rapido y barato). Para mas inteligencia: claude-sonnet-5-5.
 - APPS: agrega tus propios programas al diccionario APPS.
 
