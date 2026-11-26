@@ -7,6 +7,8 @@ import os
 import sys
 import json
 import subprocess
+import time
+import urllib.error
 import urllib.request
 
 try:
@@ -21,12 +23,19 @@ RUTA_VERSION = os.path.join(CARPETA, ".version")
 NO_TOCAR = {"iniciar_jarvis.bat"}  # se esta ejecutando mientras actualizamos
 
 
-def _bajar(url, accept=None):
+def _bajar(url, accept=None, intentos=4):
     cabeceras = {"User-Agent": "jarvis-actualizador"}
     if accept:
         cabeceras["Accept"] = accept
-    with urllib.request.urlopen(urllib.request.Request(url, headers=cabeceras), timeout=20) as r:
-        return r.read()
+    for i in range(intentos):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=cabeceras), timeout=20) as r:
+                return r.read()
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 500, 502, 503) and i < intentos - 1:
+                time.sleep(2 * (i + 1))
+                continue
+            raise
 
 
 def _leer(ruta):
